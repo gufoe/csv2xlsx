@@ -8,6 +8,7 @@ FLAGS:
     -V, --version    Prints version information
 
 OPTIONS:
-    -i, --input <input>      
-    -o, --output <output>     [default: output.xlsx]
+    -c, --column-size <column-size>    by default it depends on the content size
+    -i, --input <input>                
+    -o, --output <output>               [default: output.xlsx]
 ```
