@@ -1,7 +1,9 @@
+use calamine::Error;
+use calamine::{open_workbook, Reader, Sheets};
 use clap::Clap;
 use std::collections::HashMap;
+use std::path::Path;
 use xlsxwriter::*;
-extern crate calamine;
 
 #[derive(Clap)]
 #[clap(version = "1.1", author = "Giacomo R. <gcmrzz@gmail.com>")]
@@ -82,37 +84,33 @@ fn csv_to_excel(opts: Opts) {
     workbook.close().unwrap();
 }
 
+fn open_workbook_xlsx<P: AsRef<Path>>(path: P) -> Result<Sheets, Error> {
+    Ok(Sheets::Xlsx(open_workbook(&path).map_err(Error::Xlsx)?))
+}
+fn open_workbook_xls<P: AsRef<Path>>(path: P) -> Result<Sheets, Error> {
+    Ok(Sheets::Xls(open_workbook(&path).map_err(Error::Xls)?))
+}
+fn open_workbook_xlsb<P: AsRef<Path>>(path: P) -> Result<Sheets, Error> {
+    Ok(Sheets::Xlsb(open_workbook(&path).map_err(Error::Xlsb)?))
+}
+fn open_workbook_ods<P: AsRef<Path>>(path: P) -> Result<Sheets, Error> {
+    Ok(Sheets::Ods(open_workbook(&path).map_err(Error::Ods)?))
+}
+fn open_auto<P: AsRef<Path>>(path: P) -> Result<Sheets, Error> {
+    if let Ok(ret) = open_workbook_xlsx(&path) {
+        Ok(ret)
+    } else if let Ok(ret) = open_workbook_xls(&path) {
+        Ok(ret)
+    } else if let Ok(ret) = open_workbook_xlsb(&path) {
+        Ok(ret)
+    } else if let Ok(ret) = open_workbook_ods(&path) {
+        Ok(ret)
+    } else {
+        Err(Error::Msg("Cannot detect file format"))
+    }
+}
+
 fn excel_to_csv(opts: Opts) {
-    use calamine::Error;
-    use calamine::*;
-    use std::path::Path;
-
-    fn open_workbook_xlsx<P: AsRef<Path>>(path: P) -> Result<Sheets, Error> {
-        Ok(Sheets::Xlsx(open_workbook(&path).map_err(Error::Xlsx)?))
-    }
-    fn open_workbook_xls<P: AsRef<Path>>(path: P) -> Result<Sheets, Error> {
-        Ok(Sheets::Xls(open_workbook(&path).map_err(Error::Xls)?))
-    }
-    fn open_workbook_xlsb<P: AsRef<Path>>(path: P) -> Result<Sheets, Error> {
-        Ok(Sheets::Xlsb(open_workbook(&path).map_err(Error::Xlsb)?))
-    }
-    fn open_workbook_ods<P: AsRef<Path>>(path: P) -> Result<Sheets, Error> {
-        Ok(Sheets::Ods(open_workbook(&path).map_err(Error::Ods)?))
-    }
-    fn open_auto<P: AsRef<Path>>(path: P) -> Result<Sheets, Error> {
-        if let Ok(ret) = open_workbook_xlsx(&path) {
-            Ok(ret)
-        } else if let Ok(ret) = open_workbook_xls(&path) {
-            Ok(ret)
-        } else if let Ok(ret) = open_workbook_xlsb(&path) {
-            Ok(ret)
-        } else if let Ok(ret) = open_workbook_ods(&path) {
-            Ok(ret)
-        } else {
-            Err(Error::Msg("Cannot detect file format"))
-        }
-    }
-
     let mut excel: Sheets = open_auto(&opts.input).unwrap();
     let mut csv = csv::WriterBuilder::new()
         .flexible(true)
@@ -128,6 +126,27 @@ fn excel_to_csv(opts: Opts) {
         let data: Vec<_> = row.iter().map(|cell| cell.to_string()).collect();
         csv.write_record(&data).unwrap();
     });
+}
+
+fn _excel_to_csv_in_ram(opts: Opts) {
+    let mut excel: Sheets = open_auto(&opts.input).unwrap();
+    let range = if let Some(name) = opts.sheet_name {
+        excel.worksheet_range(&name).unwrap().unwrap()
+    } else {
+        excel.worksheet_range_at(opts.sheet).unwrap().unwrap()
+    };
+    let data: Vec<Vec<String>> = range
+        .rows()
+        .map(move |row| row.iter().map(|cell| cell.to_string()).collect())
+        .collect();
+    drop(excel);
+    drop(range);
+    let mut csv = csv::WriterBuilder::new()
+        .flexible(true)
+        .has_headers(false)
+        .from_path(&opts.output)
+        .unwrap();
+    data.iter().for_each(|row| csv.write_record(row).unwrap());
 }
 
 fn main() {
