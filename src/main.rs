@@ -15,7 +15,11 @@ struct Opts {
         default_value = "0"
     )]
     sheet: usize,
-    #[clap(short = "n", long, about = "sheet name to write (or read if converting to csv)")]
+    #[clap(
+        short = "n",
+        long,
+        about = "sheet name to write (or read if converting to csv)"
+    )]
     sheet_name: Option<String>,
     #[clap(short, long)]
     input: String,
@@ -79,20 +83,47 @@ fn csv_to_excel(opts: Opts) {
 }
 
 fn excel_to_csv(opts: Opts) {
+    use calamine::Error;
     use calamine::*;
+    use std::path::Path;
 
-    let mut excel = open_workbook_auto(&opts.input).expect("Cannot open input file");
+    fn open_workbook_xlsx<P: AsRef<Path>>(path: P) -> Result<Sheets, Error> {
+        Ok(Sheets::Xlsx(open_workbook(&path).map_err(Error::Xlsx)?))
+    }
+    fn open_workbook_xls<P: AsRef<Path>>(path: P) -> Result<Sheets, Error> {
+        Ok(Sheets::Xls(open_workbook(&path).map_err(Error::Xls)?))
+    }
+    fn open_workbook_xlsb<P: AsRef<Path>>(path: P) -> Result<Sheets, Error> {
+        Ok(Sheets::Xlsb(open_workbook(&path).map_err(Error::Xlsb)?))
+    }
+    fn open_workbook_ods<P: AsRef<Path>>(path: P) -> Result<Sheets, Error> {
+        Ok(Sheets::Ods(open_workbook(&path).map_err(Error::Ods)?))
+    }
+    fn open_auto<P: AsRef<Path>>(path: P) -> Result<Sheets, Error> {
+        if let Ok(ret) = open_workbook_xlsx(&path) {
+            Ok(ret)
+        } else if let Ok(ret) = open_workbook_xls(&path) {
+            Ok(ret)
+        } else if let Ok(ret) = open_workbook_xlsb(&path) {
+            Ok(ret)
+        } else if let Ok(ret) = open_workbook_ods(&path) {
+            Ok(ret)
+        } else {
+            Err(Error::Msg("Cannot detect file format"))
+        }
+    }
+
+    let mut excel: Sheets = open_auto(&opts.input).unwrap();
     let mut csv = csv::WriterBuilder::new()
         .flexible(true)
         .has_headers(false)
         .from_path(&opts.output)
         .unwrap();
-    let range;
-    if let Some(name) = opts.sheet_name {
-        range = excel.worksheet_range(&name).unwrap().unwrap();
+    let range = if let Some(name) = opts.sheet_name {
+        excel.worksheet_range(&name).unwrap().unwrap()
     } else {
-        range = excel.worksheet_range_at(opts.sheet).unwrap().unwrap();
-    }
+        excel.worksheet_range_at(opts.sheet).unwrap().unwrap()
+    };
     range.rows().for_each(move |row| {
         let data: Vec<_> = row.iter().map(|cell| cell.to_string()).collect();
         csv.write_record(&data).unwrap();
