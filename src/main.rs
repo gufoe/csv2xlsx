@@ -1,26 +1,26 @@
 use calamine::Error;
 use calamine::{open_workbook, Reader, Sheets};
-use clap::Clap;
+use clap::Parser;
 use std::collections::HashMap;
 use std::path::Path;
 use xlsxwriter::*;
 
-#[derive(Clap)]
-#[clap(version = "1.1", author = "Giacomo R. <gcmrzz@gmail.com>")]
+#[derive(Parser)]
+#[clap(version = "1.2", author = "Giacomo R. <gcmrzz@gmail.com>")]
 struct Opts {
-    #[clap(short, long, about = "convert <input> to a csv file")]
+    #[clap(short, long, help = "convert <input> to a csv file")]
     to_csv: bool,
     #[clap(
         short,
         long,
-        about = "index of the sheet to be read if converting to csv",
+        help = "index of the sheet to be read if converting to csv",
         default_value = "0"
     )]
     sheet: usize,
     #[clap(
-        short = "n",
+        short = 'n',
         long,
-        about = "sheet name to write (or read if converting to csv)"
+        help = "sheet name to write (or read if converting to csv)"
     )]
     sheet_name: Option<String>,
     #[clap(short, long)]
@@ -30,7 +30,7 @@ struct Opts {
     #[clap(
         short,
         long,
-        about = "by default it depends on the content size - only useful if output is an excel file"
+        help = "by default it depends on the content size - only useful if output is an excel file"
     )]
     column_size: Option<usize>,
 }
@@ -62,9 +62,13 @@ fn csv_to_excel(opts: Opts) {
                 col_sizes.insert(col_i, value.len());
             }
             if value.len() > 0 {
-                sheet
-                    .write_string((row_i) as u32, (col_i) as u16, value, None)
-                    .unwrap();
+                let res = sheet.write_string((row_i) as u32, (col_i) as u16, value, None);
+                match res {
+                    Ok(data) => data, 
+                    Err(e) => {
+                        panic!("{:?}", e.to_string())
+                    }
+                }
             }
         })
     }
