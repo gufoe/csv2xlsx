@@ -17,7 +17,7 @@ SUBCOMMANDS:
     to-excel
 ```
 
-# Convert to Csv
+## Convert to Csv
 
 Example:
 `csv2xlsx to-csv -i file.xlsx -o output.csv`
@@ -39,7 +39,7 @@ OPTIONS:
     -n, --sheet-name <sheet-name>    sheet name to read
 ```
 
-# Convert to Excel
+## Convert to Excel
 
 Example:
 `csv2xlsx to-excel -i file.csv -o /tmp/output.xlsx`
