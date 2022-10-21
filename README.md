@@ -1,5 +1,15 @@
 # Csv to Excel conversion - easy and fast
 
+Program to convert between excel and csv.
+Main features:
+
+- super simple to use
+- small memory footprint
+- high performance
+- light binary
+- simple to install
+- simple to maintain (230 lines, tests included)
+
 ```sh
 csv2xlsx 2.0
 Giacomo R. <gcmrzz@gmail.com>
