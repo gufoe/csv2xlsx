@@ -44,9 +44,11 @@ struct ToExcel {
 }
 
 #[derive(StructOpt)]
-#[structopt(about = "the stupid content tracker")]
+#[structopt(version = "2.0", author = "Giacomo R. <gcmrzz@gmail.com>")]
 enum Args {
+    #[structopt(version = "2.0")]
     ToCsv(ToCsv),
+    #[structopt(version = "2.0")]
     ToExcel(ToExcel),
 }
 
