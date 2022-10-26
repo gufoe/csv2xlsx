@@ -26,7 +26,7 @@ struct ToCsv {
 }
 #[derive(StructOpt, Default)]
 struct ToExcel {
-    #[structopt(short, parse(from_os_str), min_values = 2)]
+    #[structopt(short, parse(from_os_str), min_values = 1)]
     input: Vec<PathBuf>,
 
     #[structopt(short = "n", long, help = "sheet name to write")]
