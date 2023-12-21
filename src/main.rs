@@ -131,7 +131,6 @@ impl ToCsv {
             .from_path(&self.output)
             .unwrap();
         range.rows().for_each(move |row| {
-            println!("{:?}", row);
             let data: Vec<_> = row.iter().map(|cell| cell.to_string()).collect();
             csv.write_record(&data).unwrap();
         });
