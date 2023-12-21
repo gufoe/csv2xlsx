@@ -55,7 +55,7 @@ enum Args {
 impl ToExcel {
     fn execute(&self) {
         // Open output file
-        let workbook = Workbook::new(&self.output);
+        let workbook = Workbook::new(&self.output).unwrap();
 
         for (path_i, path) in self.input.iter().enumerate() {
             let mut sheet = workbook
@@ -119,7 +119,6 @@ impl ToCsv {
             excel
                 .worksheet_range(name)
                 .expect(&format!("Could not find sheet, {}", name))
-                .expect(&format!("Could not find sheet, {}", name))
         } else {
             excel
                 .worksheet_range_at(self.sheet)
@@ -132,6 +131,7 @@ impl ToCsv {
             .from_path(&self.output)
             .unwrap();
         range.rows().for_each(move |row| {
+            println!("{:?}", row);
             let data: Vec<_> = row.iter().map(|cell| cell.to_string()).collect();
             csv.write_record(&data).unwrap();
         });
