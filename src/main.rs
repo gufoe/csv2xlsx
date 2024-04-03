@@ -77,13 +77,14 @@ impl ToExcel {
             // Read csv and set excel values
             let mut col_sizes = HashMap::new();
             for (row_i, result) in rdr.records().enumerate() {
-                let record = result.expect("a CSV record");
+                let record = result.unwrap_or_default();
                 record.iter().enumerate().for_each(|(col_i, value)| {
                     if value.len() > *col_sizes.get(&col_i).unwrap_or(&0) {
                         col_sizes.insert(col_i, value.len());
                     }
                     if value.len() > 0 {
-                        let res = sheet.write_string((row_i) as u32, (col_i) as u16, value, None);
+                        let value = value.replace("\0", "");
+                        let res = sheet.write_string((row_i) as u32, (col_i) as u16, &value, None);
                         match res {
                             Ok(data) => data,
                             Err(e) => {
@@ -114,16 +115,16 @@ impl ToExcel {
 impl ToCsv {
     fn execute(&self) {
         let mut excel = open_workbook_auto(&self.input).unwrap();
-
+        let sheets = excel.sheet_names();
         let range = if let Some(name) = &self.sheet_name {
             excel
                 .worksheet_range(name)
-                .expect(&format!("Could not find sheet, {}", name))
+                .expect(&format!("Could not find sheet {}, available sheets: {}", name, sheets.join("; ")))
         } else {
             excel
                 .worksheet_range_at(self.sheet)
-                .expect(&format!("Could not find sheet at index, {}", self.sheet))
-                .expect(&format!("Could not find sheet at index, {}", self.sheet))
+                .expect(&format!("Could not find sheet at index {}, available sheets: {}", self.sheet, sheets.join("; ")))
+                .expect(&format!("Could not find sheet at index {}, available sheets: {}", self.sheet, sheets.join("; ")))
         };
         let mut csv = csv::WriterBuilder::new()
             .flexible(true)
